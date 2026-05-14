@@ -1,3 +1,8 @@
+<img width="1536" height="1024" alt="ChatGPT Image May 14, 2026, 04_39_16 PM" src="https://github.com/user-attachments/assets/bf892b1c-e54d-44db-bea8-77b342f1219f" />
+
+
+
+
 # Enterprise DevOps CI/CD Project
 
 ## Project Overview
