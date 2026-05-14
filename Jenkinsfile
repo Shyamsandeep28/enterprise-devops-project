@@ -143,6 +143,14 @@ stage('Push Catalog Image') {
         }
     }
 }
+        stage('Deploy To Kubernetes') {
+
+    steps {
+
+        sh 'kubectl apply -f kubernetes/'
+
+    }
+}
 
     }
 
