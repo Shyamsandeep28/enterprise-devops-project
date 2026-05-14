@@ -2,8 +2,8 @@ FROM eclipse-temurin:17
 
 WORKDIR /app
 
-COPY target/catalog-service-1.0.jar catalog-service.jar
+COPY target/catalogservice-0.0.1-SNAPSHOT.jar catalogservice.jar
 
 EXPOSE 8082
 
-ENTRYPOINT ["java","-jar","catalog-service.jar"]
+ENTRYPOINT ["java","-jar","catalogservice.jar"]
