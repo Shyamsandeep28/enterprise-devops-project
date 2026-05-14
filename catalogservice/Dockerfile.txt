@@ -1,9 +1,0 @@
-FROM eclipse-temurin:17
-
-WORKDIR /app
-
-COPY target/catalog-service-1.0.jar catalog-service.jar
-
-EXPOSE 8082
-
-ENTRYPOINT ["java","-jar","catalog-service.jar"]
