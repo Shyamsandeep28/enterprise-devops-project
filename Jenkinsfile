@@ -2,6 +2,10 @@ pipeline {
 
     agent any
 
+    environment {
+        JAVA17_HOME = "/usr/lib/jvm/java-17-openjdk-amd64"
+    }
+
     stages {
 
         stage('Checkout Code') {
@@ -14,7 +18,15 @@ pipeline {
         stage('Build Login Service') {
             steps {
                 dir('loginservice') {
-                    sh 'mvn clean package'
+                    sh '''
+                    export JAVA_HOME=$JAVA17_HOME
+                    export PATH=$JAVA_HOME/bin:$PATH
+
+                    java -version
+                    javac -version
+
+                    mvn clean package
+                    '''
                 }
             }
         }
@@ -22,7 +34,15 @@ pipeline {
         stage('Build Catalog Service') {
             steps {
                 dir('catalogservice') {
-                    sh 'mvn clean package'
+                    sh '''
+                    export JAVA_HOME=$JAVA17_HOME
+                    export PATH=$JAVA_HOME/bin:$PATH
+
+                    java -version
+                    javac -version
+
+                    mvn clean package
+                    '''
                 }
             }
         }
@@ -37,13 +57,16 @@ pipeline {
             steps {
                 dir('loginservice') {
                     sh '''
+                    export JAVA_HOME=$JAVA17_HOME
+                    export PATH=$JAVA_HOME/bin:$PATH
+
                     sonar-scanner \
                     -Dsonar.projectName=loginservice \
                     -Dsonar.projectKey=loginservice \
                     -Dsonar.sources=src \
                     -Dsonar.java.binaries=target/classes \
                     -Dsonar.host.url=http://13.206.83.5:9000 \
-                    -Dsonar.login=YOUR_SONAR_TOKEN
+                    -Dsonar.login=sqa_f9c575e6dabb719f19af8b36b7a89dc1e141a3b4
                     '''
                 }
             }
@@ -53,6 +76,9 @@ pipeline {
             steps {
                 dir('catalogservice') {
                     sh '''
+                    export JAVA_HOME=$JAVA17_HOME
+                    export PATH=$JAVA_HOME/bin:$PATH
+
                     sonar-scanner \
                     -Dsonar.projectName=catalogservice \
                     -Dsonar.projectKey=catalogservice \
