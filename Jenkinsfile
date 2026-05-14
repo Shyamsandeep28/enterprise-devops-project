@@ -2,14 +2,6 @@ pipeline {
 
     agent any
 
-    tools {
-        maven 'maven'
-    }
-
-    environment {
-        SCANNER_HOME = tool 'sonar-scanner'
-    }
-
     stages {
 
         stage('Checkout Code') {
@@ -41,34 +33,34 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis Login Service') {
+        stage('SonarQube Scan Login Service') {
             steps {
                 dir('loginservice') {
-                    withSonarQubeEnv('sonarqube') {
-                        sh '''
-                        $SCANNER_HOME/bin/sonar-scanner \
-                        -Dsonar.projectName=loginservice \
-                        -Dsonar.projectKey=loginservice \
-                        -Dsonar.sources=src \
-                        -Dsonar.java.binaries=target/classes
-                        '''
-                    }
+                    sh '''
+                    sonar-scanner \
+                    -Dsonar.projectName=loginservice \
+                    -Dsonar.projectKey=loginservice \
+                    -Dsonar.sources=src \
+                    -Dsonar.java.binaries=target/classes \
+                    -Dsonar.host.url=http://13.206.83.5:9000 \
+                    -Dsonar.login=YOUR_SONAR_TOKEN
+                    '''
                 }
             }
         }
 
-        stage('SonarQube Analysis Catalog Service') {
+        stage('SonarQube Scan Catalog Service') {
             steps {
                 dir('catalogservice') {
-                    withSonarQubeEnv('sonarqube') {
-                        sh '''
-                        $SCANNER_HOME/bin/sonar-scanner \
-                        -Dsonar.projectName=catalogservice \
-                        -Dsonar.projectKey=catalogservice \
-                        -Dsonar.sources=src \
-                        -Dsonar.java.binaries=target/classes
-                        '''
-                    }
+                    sh '''
+                    sonar-scanner \
+                    -Dsonar.projectName=catalogservice \
+                    -Dsonar.projectKey=catalogservice \
+                    -Dsonar.sources=src \
+                    -Dsonar.java.binaries=target/classes \
+                    -Dsonar.host.url=http://13.206.83.5:9000 \
+                    -Dsonar.login=sqa_f9c575e6dabb719f19af8b36b7a89dc1e141a3b4
+                    '''
                 }
             }
         }
