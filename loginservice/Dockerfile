@@ -2,7 +2,7 @@ FROM eclipse-temurin:17
 
 WORKDIR /app
 
-COPY target/login-service-1.0.jar login-service.jar
+COPY target/*.jar app.jar
 
 EXPOSE 8081
 
