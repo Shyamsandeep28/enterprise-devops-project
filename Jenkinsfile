@@ -94,7 +94,7 @@ pipeline {
         stage('Build Docker Image Login') {
             steps {
                 dir('loginservice') {
-                    sh 'docker build -t loginservice:v1 .'
+                    sh 'docker build -t loginservice:${BUILD_NUMBER} .'
                 }
             }
         }
@@ -102,15 +102,15 @@ pipeline {
         stage('Build Docker Image Catalog') {
             steps {
                 dir('catalogservice') {
-                    sh 'docker build -t catalogservice:v1 .'
+                    sh 'docker build -t catalogservice:${BUILD_NUMBER} .'
                 }
             }
         }
 
         stage('Trivy Image Scan') {
             steps {
-                sh 'trivy image loginservice:v1'
-                sh 'trivy image catalogservice:v1'
+                sh 'trivy image loginservice:${BUILD_NUMBER}'
+                sh 'trivy image catalogservice:${BUILD_NUMBER}'
             }
         }
 
@@ -121,9 +121,9 @@ pipeline {
 
             withDockerRegistry([ credentialsId: "dockerhub-creds", url: "" ]) {
 
-                sh 'docker tag loginservice:v1 sandeep289/loginservice:v1'
+                sh 'docker tag loginservice:${BUILD_NUMBER}  sandeep289/loginservice:${BUILD_NUMBER} '
 
-                sh 'docker push sandeep289/loginservice:v1'
+                sh 'docker push sandeep289/loginservice:${BUILD_NUMBER} '
             }
         }
     }
@@ -136,9 +136,9 @@ stage('Push Catalog Image') {
 
             withDockerRegistry([ credentialsId: "dockerhub-creds", url: "" ]) {
 
-                sh 'docker tag catalogservice:v1 sandeep289/catalogservice:v1'
+                sh 'docker tag catalogservice:${BUILD_NUMBER}  sandeep289/catalogservice:${BUILD_NUMBER} '
 
-                sh 'docker push sandeep289/catalogservice:v1'
+                sh 'docker push sandeep289/catalogservice:${BUILD_NUMBER}'
             }
         }
     }
