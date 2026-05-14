@@ -60,7 +60,7 @@ pipeline {
                     export JAVA_HOME=$JAVA17_HOME
                     export PATH=$JAVA_HOME/bin:$PATH
 
-                    sonar-scanner \
+                    /opt/sonar-scanner/bin/sonar-scanner \
                     -Dsonar.projectName=loginservice \
                     -Dsonar.projectKey=loginservice \
                     -Dsonar.sources=src \
@@ -79,7 +79,7 @@ pipeline {
                     export JAVA_HOME=$JAVA17_HOME
                     export PATH=$JAVA_HOME/bin:$PATH
 
-                    sonar-scanner \
+                    /opt/sonar-scanner/bin/sonar-scanner \
                     -Dsonar.projectName=catalogservice \
                     -Dsonar.projectKey=catalogservice \
                     -Dsonar.sources=src \
