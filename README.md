@@ -588,16 +588,391 @@ http://13.206.83.5:8080
 
 ---
 
-# Future Enhancements
+---
 
-- Docker Hub Push
-- Kubernetes Deployment
+# Kubernetes Deployment Integration
+
+## Overview
+
+The next phase of this project is Kubernetes deployment integration.
+
+A separate **3-node Kubernetes Cluster** has been configured, and Jenkins will deploy the Docker images directly to the Kubernetes cluster.
+
+Since Jenkins is running on a separate EC2 machine, Jenkins requires Kubernetes cluster access using the Kubernetes config file (`kubeconfig`).
+
+The following setup enables Jenkins to:
+
+- Access Kubernetes Cluster
+- Execute `kubectl` commands
+- Deploy applications automatically
+- Manage Kubernetes Deployments and Services
+
+---
+
+# Kubernetes Cluster Details
+
+| Component | Description |
+|---|---|
+| Master Node | Kubernetes Control Plane |
+| Worker Node 1 | Application Workloads |
+| Worker Node 2 | Application Workloads |
+| Jenkins Server | Separate EC2 Instance |
+
+---
+
+# Install kubectl on Jenkins Server
+
+## Download kubectl
+
+```bash
+curl -LO "https://dl.k8s.io/release/$(curl -L -s \
+https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+```
+
+---
+
+## Make kubectl Executable
+
+```bash
+chmod +x kubectl
+```
+
+---
+
+## Move kubectl Binary
+
+```bash
+sudo mv kubectl /usr/local/bin/
+```
+
+---
+
+## Verify kubectl Installation
+
+```bash
+kubectl version --client
+```
+
+---
+
+# Copy Kubernetes Config File to Jenkins Server
+
+The Kubernetes cluster access configuration file is available on the Kubernetes master node.
+
+Location:
+
+```text
+~/.kube/config
+```
+
+Copy this file from Kubernetes Master Node to Jenkins Server.
+
+---
+
+## Create .kube Directory
+
+```bash
+mkdir -p ~/.kube
+```
+
+---
+
+## Copy kubeconfig File
+
+Run from Jenkins Server:
+
+```bash
+scp ubuntu@<K8S-MASTER-IP>:~/.kube/config ~/.kube/config
+```
+
+Example:
+
+```bash
+scp ubuntu@192.168.1.10:~/.kube/config ~/.kube/config
+```
+
+---
+
+# Verify Kubernetes Cluster Access
+
+Run:
+
+```bash
+kubectl get nodes
+```
+
+Expected Output:
+
+```text
+NAME           STATUS   ROLES           AGE   VERSION
+master-node    Ready    control-plane   XXd   v1.xx.x
+worker-node1   Ready    <none>          XXd   v1.xx.x
+worker-node2   Ready    <none>          XXd   v1.xx.x
+```
+
+---
+
+# Provide Kubernetes Access to Jenkins User
+
+By default, Jenkins user cannot access the Kubernetes config file.
+
+We need to copy the kubeconfig file to Jenkins user home directory and provide proper permissions.
+
+---
+
+## Switch to Root User
+
+```bash
+sudo su -
+```
+
+---
+
+## Create Jenkins .kube Directory
+
+```bash
+mkdir -p /var/lib/jenkins/.kube
+```
+
+---
+
+## Copy kubeconfig to Jenkins Directory
+
+```bash
+cp ~/.kube/config /var/lib/jenkins/.kube/config
+```
+
+---
+
+## Change Ownership
+
+```bash
+chown -R jenkins:jenkins /var/lib/jenkins/.kube
+```
+
+---
+
+## Set Proper Permissions
+
+```bash
+chmod 600 /var/lib/jenkins/.kube/config
+```
+
+---
+
+# Verify Kubernetes Access for Jenkins User
+
+Switch to Jenkins user:
+
+```bash
+sudo su - jenkins
+```
+
+Run:
+
+```bash
+kubectl get nodes
+```
+
+If nodes are visible successfully, Jenkins can now deploy applications to Kubernetes cluster.
+
+---
+
+# Kubernetes Deployment YAML Files
+
+The project contains Kubernetes manifests for deployment and services.
+
+Example structure:
+
+```text
+k8s/
+
+├── login-deployment.yaml
+├── login-service.yaml
+├── catalog-deployment.yaml
+└── catalog-service.yaml
+```
+
+---
+
+# Example Login Deployment
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: login-deployment
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: loginapp
+
+  template:
+    metadata:
+      labels:
+        app: loginapp
+
+    spec:
+      containers:
+      - name: login-container
+        image: loginservice:v1
+
+        ports:
+        - containerPort: 8081
+```
+
+---
+
+# Example Login Service
+
+```yaml
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: login-service
+
+spec:
+  type: NodePort
+
+  selector:
+    app: loginapp
+
+  ports:
+  - port: 8081
+    targetPort: 8081
+    nodePort: 30081
+```
+
+---
+
+# Deploy Applications to Kubernetes
+
+## Deploy Login Service
+
+```bash
+kubectl apply -f login-deployment.yaml
+kubectl apply -f login-service.yaml
+```
+
+---
+
+## Deploy Catalog Service
+
+```bash
+kubectl apply -f catalog-deployment.yaml
+kubectl apply -f catalog-service.yaml
+```
+
+---
+
+# Verify Kubernetes Deployments
+
+## Check Deployments
+
+```bash
+kubectl get deployments
+```
+
+---
+
+## Check Pods
+
+```bash
+kubectl get pods
+```
+
+---
+
+## Check Services
+
+```bash
+kubectl get svc
+```
+
+---
+
+# Access Applications via Kubernetes
+
+## Login Service
+
+```text
+http://<WORKER-NODE-IP>:30081
+```
+
+## Catalog Service
+
+```text
+http://<WORKER-NODE-IP>:30082
+```
+
+---
+
+# Jenkins Kubernetes Deployment Stage
+
+The Jenkins pipeline can now deploy applications directly into Kubernetes cluster.
+
+Example deployment stage:
+
+```groovy
+stage('Deploy to Kubernetes') {
+
+    steps {
+
+        sh 'kubectl apply -f k8s/login-deployment.yaml'
+        sh 'kubectl apply -f k8s/login-service.yaml'
+
+        sh 'kubectl apply -f k8s/catalog-deployment.yaml'
+        sh 'kubectl apply -f k8s/catalog-service.yaml'
+    }
+}
+```
+
+---
+
+# Verify End-to-End CI/CD Flow
+
+```text
+Developer
+    ↓
+GitHub Push
+    ↓
+Jenkins Pipeline Trigger
+    ↓
+Maven Build
+    ↓
+Trivy Scan
+    ↓
+SonarQube Analysis
+    ↓
+Docker Build
+    ↓
+Kubernetes Deployment
+    ↓
+Application Live on Kubernetes Cluster
+```
+
+---
+
+# Future Kubernetes Enhancements
+
+- Kubernetes Ingress Controller
+- NGINX Ingress
 - Helm Charts
-- ArgoCD
+- Horizontal Pod Autoscaler (HPA)
+- ArgoCD GitOps Deployment
 - Prometheus Monitoring
 - Grafana Dashboard
-- Blue-Green Deployment
-- GitOps Pipeline
+- Kubernetes RBAC
+- Persistent Volumes
+- Secret Management
+- Kubernetes Network Policies
+
+---
 
 ---
 
