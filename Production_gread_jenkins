@@ -1,0 +1,271 @@
+pipeline {
+
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
+    environment {
+
+        JAVA_HOME = "/usr/lib/jvm/java-17-openjdk-amd64"
+        PATH = "${JAVA_HOME}/bin:${env.PATH}"
+
+        DOCKERHUB_CREDS = "dockerhub-creds"
+
+        SONAR_URL = "http://13.206.83.5:9000"
+        SONAR_TOKEN = credentials('sonar-token')
+
+        LOGIN_IMAGE = "sandeep289/loginservice"
+        CATALOG_IMAGE = "sandeep289/catalogservice"
+
+        IMAGE_TAG = "${BUILD_NUMBER}"
+    }
+
+    triggers {
+        githubPush()
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+
+            steps {
+
+                git branch: 'main',
+                url: 'https://github.com/Shyamsandeep28/enterprise-devops-project.git'
+
+                script {
+
+                    env.LOGIN_CHANGED = sh(
+                        script: """
+                        git diff --name-only HEAD~1 HEAD | grep '^loginservice/' > /dev/null
+                        echo \$?
+                        """,
+                        returnStdout: true
+                    ).trim()
+
+                    env.CATALOG_CHANGED = sh(
+                        script: """
+                        git diff --name-only HEAD~1 HEAD | grep '^catalogservice/' > /dev/null
+                        echo \$?
+                        """,
+                        returnStdout: true
+                    ).trim()
+
+                    echo "LOGIN_CHANGED = ${env.LOGIN_CHANGED}"
+                    echo "CATALOG_CHANGED = ${env.CATALOG_CHANGED}"
+                }
+            }
+        }
+
+        stage('Trivy File System Scan') {
+
+            steps {
+                sh 'trivy fs .'
+            }
+        }
+
+        stage('Build Microservices') {
+
+            parallel {
+
+                stage('Login Service Pipeline') {
+
+                    when {
+                        expression {
+                            env.LOGIN_CHANGED == "0"
+                        }
+                    }
+
+                    stages {
+
+                        stage('Build Login Service') {
+
+                            steps {
+
+                                dir('loginservice') {
+
+                                    sh '''
+                                    java -version
+                                    mvn clean package
+                                    '''
+                                }
+                            }
+                        }
+
+                        stage('SonarQube Scan Login') {
+
+                            steps {
+
+                                dir('loginservice') {
+
+                                    sh """
+                                    /opt/sonar-scanner/bin/sonar-scanner \
+                                    -Dsonar.projectName=loginservice \
+                                    -Dsonar.projectKey=loginservice \
+                                    -Dsonar.sources=src \
+                                    -Dsonar.java.binaries=target/classes \
+                                    -Dsonar.host.url=${SONAR_URL} \
+                                    -Dsonar.login=${SONAR_TOKEN}
+                                    """
+                                }
+                            }
+                        }
+
+                        stage('Build Login Docker Image') {
+
+                            steps {
+
+                                dir('loginservice') {
+
+                                    sh """
+                                    docker build -t ${LOGIN_IMAGE}:${IMAGE_TAG} .
+                                    """
+                                }
+                            }
+                        }
+
+                        stage('Trivy Login Image Scan') {
+
+                            steps {
+
+                                sh """
+                                trivy image ${LOGIN_IMAGE}:${IMAGE_TAG}
+                                """
+                            }
+                        }
+
+                        stage('Push Login Docker Image') {
+
+                            steps {
+
+                                script {
+
+                                    withDockerRegistry([credentialsId: DOCKERHUB_CREDS]) {
+
+                                        sh """
+                                        docker push ${LOGIN_IMAGE}:${IMAGE_TAG}
+
+                                        docker tag ${LOGIN_IMAGE}:${IMAGE_TAG} ${LOGIN_IMAGE}:latest
+
+                                        docker push ${LOGIN_IMAGE}:latest
+                                        """
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                stage('Catalog Service Pipeline') {
+
+                    when {
+                        expression {
+                            env.CATALOG_CHANGED == "0"
+                        }
+                    }
+
+                    stages {
+
+                        stage('Build Catalog Service') {
+
+                            steps {
+
+                                dir('catalogservice') {
+
+                                    sh '''
+                                    java -version
+                                    mvn clean package
+                                    '''
+                                }
+                            }
+                        }
+
+                        stage('SonarQube Scan Catalog') {
+
+                            steps {
+
+                                dir('catalogservice') {
+
+                                    sh """
+                                    /opt/sonar-scanner/bin/sonar-scanner \
+                                    -Dsonar.projectName=catalogservice \
+                                    -Dsonar.projectKey=catalogservice \
+                                    -Dsonar.sources=src \
+                                    -Dsonar.java.binaries=target/classes \
+                                    -Dsonar.host.url=${SONAR_URL} \
+                                    -Dsonar.login=${SONAR_TOKEN}
+                                    """
+                                }
+                            }
+                        }
+
+                        stage('Build Catalog Docker Image') {
+
+                            steps {
+
+                                dir('catalogservice') {
+
+                                    sh """
+                                    docker build -t ${CATALOG_IMAGE}:${IMAGE_TAG} .
+                                    """
+                                }
+                            }
+                        }
+
+                        stage('Trivy Catalog Image Scan') {
+
+                            steps {
+
+                                sh """
+                                trivy image ${CATALOG_IMAGE}:${IMAGE_TAG}
+                                """
+                            }
+                        }
+
+                        stage('Push Catalog Docker Image') {
+
+                            steps {
+
+                                script {
+
+                                    withDockerRegistry([credentialsId: DOCKERHUB_CREDS]) {
+
+                                        sh """
+                                        docker push ${CATALOG_IMAGE}:${IMAGE_TAG}
+
+                                        docker tag ${CATALOG_IMAGE}:${IMAGE_TAG} ${CATALOG_IMAGE}:latest
+
+                                        docker push ${CATALOG_IMAGE}:latest
+                                        """
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+
+        always {
+
+            cleanWs()
+        }
+
+        success {
+
+            echo 'Pipeline Executed Successfully'
+        }
+
+        failure {
+
+            echo 'Pipeline Failed'
+        }
+    }
+}
