@@ -153,12 +153,12 @@ stage('Push Catalog Image') {
 
             sh '''
             kubectl set image deployment/login-deployment \
-            login-container=sandeepdevops/loginservice:${BUILD_NUMBER}
+            login-container=sandeep289/loginservice:${BUILD_NUMBER}
             '''
 
             sh '''
             kubectl set image deployment/catalog-deployment \
-            catalog-container=sandeepdevops/catalogservice:${BUILD_NUMBER}
+            catalog-container=sandeep289/catalogservice:${BUILD_NUMBER}
 
     }
 }
