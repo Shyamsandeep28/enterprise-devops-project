@@ -114,9 +114,7 @@ pipeline {
             }
         }
 
-    }
-
-    stage('Push Login Image') {
+            stage('Push Login Image') {
     steps {
 
         script {
@@ -145,6 +143,10 @@ stage('Push Catalog Image') {
         }
     }
 }
+
+    }
+
+
 
     post {
 
