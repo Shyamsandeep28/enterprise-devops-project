@@ -6,4 +6,4 @@ COPY target/*.jar app.jar
 
 EXPOSE 8082
 
-ENTRYPOINT ["java","-jar","catalogservice.jar"]
+ENTRYPOINT ["java","-jar","app.jar"]
