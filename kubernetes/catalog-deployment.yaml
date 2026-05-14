@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: catalog-deployment
+
+spec:
+  replicas: 2
+
+  strategy:
+    type: RollingUpdate
+
+  selector:
+    matchLabels:
+      app: catalog-app
+
+  template:
+    metadata:
+      labels:
+        app: catalog-app
+
+    spec:
+      containers:
+      - name: catalog-container
+        image: sandeep289/catalogservice:v1
+
+        ports:
+        - containerPort: 8082
