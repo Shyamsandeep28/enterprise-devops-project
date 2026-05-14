@@ -147,7 +147,18 @@ stage('Push Catalog Image') {
 
     steps {
 
-        sh 'kubectl apply -f kubernetes/'
+             sh '''
+            kubectl apply -f kubernetes/
+            '''
+
+            sh '''
+            kubectl set image deployment/login-deployment \
+            login-container=sandeepdevops/loginservice:${BUILD_NUMBER}
+            '''
+
+            sh '''
+            kubectl set image deployment/catalog-deployment \
+            catalog-container=sandeepdevops/catalogservice:${BUILD_NUMBER}
 
     }
 }
