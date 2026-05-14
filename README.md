@@ -11,6 +11,7 @@ This project demonstrates a complete **Production-Grade DevOps CI/CD Pipeline** 
 - Trivy
 - SonarQube
 - GitHub
+- Kubernetes
 
 The project contains two Spring Boot microservices:
 
@@ -38,7 +39,11 @@ Docker Image Build
     ↓
 Trivy Image Scan
     ↓
-Docker Deployment
+Docker Push to registery
+      ↓
+
+Kubernetes Deployment
+
 ```
 
 ---
@@ -55,6 +60,8 @@ Docker Deployment
 | Trivy | Security Scanning |
 | SonarQube | Code Quality Analysis |
 | GitHub | Source Code Management |
+| Kubernetes | Deployement |
+ 
 
 ---
 
