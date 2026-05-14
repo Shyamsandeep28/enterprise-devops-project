@@ -116,6 +116,36 @@ pipeline {
 
     }
 
+    stage('Push Login Image') {
+    steps {
+
+        script {
+
+            withDockerRegistry([ credentialsId: "dockerhub-creds", url: "" ]) {
+
+                sh 'docker tag loginservice:v1 sandeep289/loginservice:v1'
+
+                sh 'docker push sandeep289/loginservice:v1'
+            }
+        }
+    }
+}
+
+stage('Push Catalog Image') {
+    steps {
+
+        script {
+
+            withDockerRegistry([ credentialsId: "dockerhub-creds", url: "" ]) {
+
+                sh 'docker tag catalogservice:v1 sandeep289/catalogservice:v1'
+
+                sh 'docker push sandeep289/catalogservice:v1'
+            }
+        }
+    }
+}
+
     post {
 
         success {
